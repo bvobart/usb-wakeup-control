@@ -1,0 +1,11 @@
+[Unit]
+Description=Disable or enable wakeup of USB device before sleep so they will or will not wake the computer from suspend
+Before=sleep.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/usb-wakeup-control systemd-run-before-sleep
+StandardOutput=journal
+
+[Install]
+WantedBy=sleep.target
