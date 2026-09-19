@@ -40,10 +40,10 @@ function usage {
 # Helpers
 #--------------------------------------------------------------------------------------------------
 
-# Find the wakeup file for a specific USB device
-# Usage: find_wakeup_file vendorId productId
+# Find the wakeup file for specific USB devices
+# Usage: find_wakeup_files vendorId productId
 # Returns: the path to the wakeup file, guaranteed to exist
-function find_wakeup_file {
+function find_wakeup_files {
   vendor=$1
   product=$2
   for bus in /sys/bus/usb/devices/*; do
@@ -51,9 +51,9 @@ function find_wakeup_file {
 
     idVendor=$(cat "$bus/idVendor")
     idProduct=$(cat "$bus/idProduct")
-    wakeup_file="$bus/power/wakeup"
-    if [[ $idVendor = "$vendor" ]] && [[ $idProduct = "$product" ]] && [[ -f "$wakeup_file" ]]; then
-      echo "$wakeup_file"
+    wakeup_files="$bus/power/wakeup"
+    if [[ $idVendor = "$vendor" ]] && [[ $idProduct = "$product" ]] && [[ -f "$wakeup_files" ]]; then
+      echo "$wakeup_files"
     fi
   done
 }
@@ -69,13 +69,15 @@ function set_wakeup_state {
   product_name=$4
   state=$5
 
-  wakeup_file=$(find_wakeup_file "$vendor" "$product")
-  bus=${wakeup_file%/power/wakeup}
+  wakeup_files=$(find_wakeup_files "$vendor" "$product")
+  for wakeup_file in $wakeup_files; do
+    bus=${wakeup_file%/power/wakeup}
 
-  old_state=$(cat "$wakeup_file")
-  echo "$state" > "$wakeup_file"
-  new_state=$(cat "$wakeup_file")
-  echo "Bus-port:$bus vendor=$vendor product=$product name=$product_name WakeUp: old=$old_state new=$new_state"
+    old_state=$(cat "$wakeup_file")
+    echo "$state" >"$wakeup_file"
+    new_state=$(cat "$wakeup_file")
+    echo "Bus-port:$bus vendor=$vendor product=$product name=$product_name WakeUp: old=$old_state new=$new_state"
+  done
 }
 
 # Check if a USB device is disabled in the config
@@ -140,9 +142,9 @@ function detect {
         productName=$(cat "$bus/product")
       fi
 
-      wakeup_file="$bus/power/wakeup"
-      if [[ -f "$wakeup_file" ]]; then
-        wakeup_state=$(cat "$wakeup_file")
+      wakeup_files="$bus/power/wakeup"
+      if [[ -f "$wakeup_files" ]]; then
+        wakeup_state=$(cat "$wakeup_files")
         echo "$bus vendor=$idVendor product=$idProduct WakeUp=$wakeup_state name=$productName"
       fi
     fi
@@ -152,7 +154,7 @@ function detect {
 function disable {
   vendor=$1
   product=$2
-  
+
   if [[ -z "$vendor" ]] || [[ -z "$product" ]]; then
     echo "Usage: $0 disable vendorId productId"
     exit 1
@@ -170,14 +172,14 @@ function disable {
     echo "$vendor $product" >> "$config_dir/disabled"
     echo "Config: added USB device $vendor $product to $config_dir/disabled"
   fi
-  
+
   set_wakeup_state "$bus" "$vendor" "$product" "$productName" "disabled"
 }
 
 function enable {
   vendor=$1
   product=$2
-  
+
   if [[ -z "$vendor" ]] || [[ -z "$product" ]]; then
     echo "Usage: $0 enable vendorId productId"
     exit 1
@@ -229,7 +231,7 @@ elif [[ "$1" == "enable" ]]; then
   exit 0
 elif [[ "$1" == "systemd-run-before-sleep" ]]; then
   wakeup_disable_all_configured_devices
-  wakeup_enable_all_configured_devices 
+  wakeup_enable_all_configured_devices
   exit 0
 elif [[ "$1" == "help" || "$1" == "--help" || "$1" == "-h" ]]; then
   usage
