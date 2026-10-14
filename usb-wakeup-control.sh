@@ -70,8 +70,18 @@ function set_wakeup_state {
   state=$5
 
   wakeup_files=$(find_wakeup_files "$vendor" "$product")
+  if [[ -z "$wakeup_files" ]]; then
+    echo "vendor=$vendor product=$product not connected, skipping. WakeUp will be set to $state once it is connected and usb-wakeup-control runs again."
+    return 0
+  fi
+
   for wakeup_file in $wakeup_files; do
     bus=${wakeup_file%/power/wakeup}
+    # the device may have been unplugged since find_wakeup_files looked for it
+    if [[ ! -e "$wakeup_file" ]]; then
+      echo "Bus-port:$bus vendor=$vendor product=$product disconnected, skipping."
+      continue
+    fi
 
     old_state=$(cat "$wakeup_file")
     echo "$state" >"$wakeup_file"
