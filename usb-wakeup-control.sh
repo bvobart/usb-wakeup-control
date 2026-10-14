@@ -227,12 +227,14 @@ function enable {
 
 function wakeup_disable_all_configured_devices {
   while read -r vendor product; do
+    if [[ -z "$vendor" ]] || [[ -z "$product" ]]; then continue; fi
     disable "$vendor" "$product"
   done < "$config_dir/disabled"
 }
 
 function wakeup_enable_all_configured_devices {
   while read -r vendor product; do
+    if [[ -z "$vendor" ]] || [[ -z "$product" ]]; then continue; fi
     enable "$vendor" "$product"
   done < "$config_dir/enabled"
 }

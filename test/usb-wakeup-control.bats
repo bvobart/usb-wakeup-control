@@ -208,3 +208,15 @@ setup_install() {
   [ "$(config disabled)" = "$(printf 'dead beef\n046d c077')" ]
   [ "$(config enabled)" = "$(printf 'cafe babe\n03f0 0024')" ]
 }
+
+@test "systemd-run-before-sleep ignores blank lines in the config" {
+  add_device 2-1 046d c077 enabled
+  add_device 2-2 03f0 0024 disabled
+  printf '\n046d c077\n\n' >"$USB_WAKEUP_CONTROL_CONFIG_DIR/disabled"
+  printf '  \n03f0 0024\n' >"$USB_WAKEUP_CONTROL_CONFIG_DIR/enabled"
+
+  run "$script" systemd-run-before-sleep
+  [ "$status" -eq 0 ]
+  [ "$(wakeup_state_of 2-1)" = disabled ]
+  [ "$(wakeup_state_of 2-2)" = enabled ]
+}
