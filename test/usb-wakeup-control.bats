@@ -104,6 +104,15 @@ setup_install() {
   [ "${lines[1]}" = "$USB_WAKEUP_CONTROL_USB_DEVICES_DIR/1-2 vendor=0bda product=8153 WakeUp=disabled name=USB 10/100/1000 LAN" ]
 }
 
+@test "detect does not reuse the name of the previous device for a device without a name" {
+  add_device 1-1 046d c52b enabled "Unifying Receiver"
+  add_device 1-2 8087 0033 disabled
+
+  run "$script" detect
+  [ "$status" -eq 0 ]
+  [ "${lines[1]}" = "$USB_WAKEUP_CONTROL_USB_DEVICES_DIR/1-2 vendor=8087 product=0033 WakeUp=disabled name=" ]
+}
+
 @test "disable stores the device in the config and disables its wakeup" {
   add_device 1-1 046d c52b enabled
   add_device 1-2 0bda 8153 enabled

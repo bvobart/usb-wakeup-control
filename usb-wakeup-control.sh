@@ -162,6 +162,7 @@ function detect {
     if [[ -f "$bus/idVendor" ]] && [[ -f "$bus/idProduct" ]]; then
       idVendor=$(cat "$bus/idVendor")
       idProduct=$(cat "$bus/idProduct")
+      productName=""
       if [ -f "$bus/product" ]; then
         productName=$(cat "$bus/product")
       fi
