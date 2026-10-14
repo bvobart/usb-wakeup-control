@@ -125,6 +125,18 @@ setup_install() {
   [ "$(wakeup_state_of 1-2)" = enabled ]
 }
 
+@test "enable and disable show the name of the device" {
+  add_device 1-1 046d c52b enabled "Unifying Receiver"
+
+  run "$script" disable 046d c52b
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Bus-port:$USB_WAKEUP_CONTROL_USB_DEVICES_DIR/1-1 vendor=046d product=c52b name=Unifying Receiver WakeUp: old=enabled new=disabled"* ]]
+
+  run "$script" enable 046d c52b
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Bus-port:$USB_WAKEUP_CONTROL_USB_DEVICES_DIR/1-1 vendor=046d product=c52b name=Unifying Receiver WakeUp: old=disabled new=enabled"* ]]
+}
+
 @test "enable moves the device from disabled to enabled and enables its wakeup" {
   add_device 1-1 046d c52b enabled
 

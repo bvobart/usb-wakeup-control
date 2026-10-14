@@ -62,15 +62,13 @@ function find_wakeup_files {
 }
 
 # Set the wakeup state for a specific USB device
-# Usage: set_wakeup_state bus vendor product productName state
+# Usage: set_wakeup_state vendor product state
 # where: state is either "enabled" or "disabled"
 # Returns: nothing (but prints the old and new state in journalctl format)
 function set_wakeup_state {
-  bus=$1
-  vendor=$2
-  product=$3
-  product_name=$4
-  state=$5
+  vendor=$1
+  product=$2
+  state=$3
 
   wakeup_files=$(find_wakeup_files "$vendor" "$product")
   if [[ -z "$wakeup_files" ]]; then
@@ -86,6 +84,7 @@ function set_wakeup_state {
       continue
     fi
 
+    product_name=$(cat "$bus/product" 2>/dev/null || true)
     old_state=$(cat "$wakeup_file")
     echo "$state" >"$wakeup_file"
     new_state=$(cat "$wakeup_file")
@@ -198,7 +197,7 @@ function disable {
     echo "Config: added USB device $vendor $product to $config_dir/disabled"
   fi
 
-  set_wakeup_state "$bus" "$vendor" "$product" "$productName" "disabled"
+  set_wakeup_state "$vendor" "$product" "disabled"
 }
 
 function enable {
@@ -223,7 +222,7 @@ function enable {
     echo "Config: added USB device $vendor $product to $config_dir/enabled"
   fi
 
-  set_wakeup_state "$bus" "$vendor" "$product" "$productName" "enabled"
+  set_wakeup_state "$vendor" "$product" "enabled"
 }
 
 function wakeup_disable_all_configured_devices {
