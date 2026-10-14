@@ -29,6 +29,16 @@ config() {
   cat "$USB_WAKEUP_CONTROL_CONFIG_DIR/$1"
 }
 
+# Point install at a temporary systemd dir and replace systemctl with a stub that logs its arguments
+setup_install() {
+  export USB_WAKEUP_CONTROL_SYSTEMD_DIR="$BATS_TEST_TMPDIR/etc/systemd/system"
+  mkdir -p "$USB_WAKEUP_CONTROL_SYSTEMD_DIR" "$BATS_TEST_TMPDIR/stubs"
+  rm -r "$USB_WAKEUP_CONTROL_CONFIG_DIR"
+  printf '#!/bin/bash\necho "$*" >>"%s"\n' "$BATS_TEST_TMPDIR/systemctl.log" >"$BATS_TEST_TMPDIR/stubs/systemctl"
+  chmod +x "$BATS_TEST_TMPDIR/stubs/systemctl"
+  export PATH="$BATS_TEST_TMPDIR/stubs:$PATH"
+}
+
 @test "help prints usage and exits 0, unknown command exits 1" {
   run "$script" help
   [ "$status" -eq 0 ]
@@ -37,6 +47,45 @@ config() {
   run "$script" foo
   [ "$status" -eq 1 ]
   [[ "$output" == *"Usage:"* ]]
+}
+
+@test "install --to installs the script in the given directory and points the systemd service at it" {
+  setup_install
+  bin_dir="$BATS_TEST_TMPDIR/opt/bin"
+
+  run "$script" install --to "$bin_dir"
+  [ "$status" -eq 0 ]
+  [ -x "$bin_dir/usb-wakeup-control" ]
+  cmp "$script" "$bin_dir/usb-wakeup-control"
+  grep -qx "ExecStart=$bin_dir/usb-wakeup-control systemd-run-before-sleep" "$USB_WAKEUP_CONTROL_SYSTEMD_DIR/usb-wakeup-control.service"
+  [ "$(cat "$BATS_TEST_TMPDIR/systemctl.log")" = "$(printf 'daemon-reload\nenable usb-wakeup-control.service')" ]
+  [ -f "$USB_WAKEUP_CONTROL_CONFIG_DIR/disabled" ]
+  [ -f "$USB_WAKEUP_CONTROL_CONFIG_DIR/enabled" ]
+}
+
+@test "install --to with a relative directory and script path uses absolute paths" {
+  setup_install
+  mkdir -p "$BATS_TEST_TMPDIR/cwd"
+  cd "$BATS_TEST_TMPDIR/cwd"
+  relative_script=$(realpath --relative-to=. "$script")
+
+  run "$relative_script" install --to bin
+  [ "$status" -eq 0 ]
+  [ -x "$BATS_TEST_TMPDIR/cwd/bin/usb-wakeup-control" ]
+  grep -qx "ExecStart=$BATS_TEST_TMPDIR/cwd/bin/usb-wakeup-control systemd-run-before-sleep" "$USB_WAKEUP_CONTROL_SYSTEMD_DIR/usb-wakeup-control.service"
+}
+
+@test "install with invalid arguments exits 1 without installing anything" {
+  setup_install
+
+  for args in "--to" "--foo" "--to a b"; do
+    # shellcheck disable=SC2086
+    run "$script" install $args
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Usage: "*" install [--to directory]"* ]]
+  done
+  [ ! -e "$USB_WAKEUP_CONTROL_SYSTEMD_DIR/usb-wakeup-control.service" ]
+  [ ! -e "$BATS_TEST_TMPDIR/systemctl.log" ]
 }
 
 @test "detect lists every USB device with a wakeup file on its own line" {

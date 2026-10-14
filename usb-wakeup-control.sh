@@ -3,6 +3,7 @@
 # These locations can be overridden with environment variables, which is mainly useful for testing.
 usb_devices_dir="${USB_WAKEUP_CONTROL_USB_DEVICES_DIR:-/sys/bus/usb/devices}"
 config_dir="${USB_WAKEUP_CONTROL_CONFIG_DIR:-/etc/usb-wakeup-control}"
+systemd_dir="${USB_WAKEUP_CONTROL_SYSTEMD_DIR:-/etc/systemd/system}"
 
 function usage {
   echo "usb-wakeup-control"
@@ -12,7 +13,7 @@ function usage {
   echo "Also useful to prevent unintended mouse movements from accidentally waking up your laptop."
   echo
   echo "Usage:"
-  echo "  $0 install                       install this script as /usr/local/bin/usb-wakeup-control and add a systemd service to /etc/systemd/system"
+  echo "  $0 install [--to directory]      install this script as <directory>/usb-wakeup-control (default: /usr/local/bin) and add a systemd service to /etc/systemd/system"
   echo "                             NOTE: This is required for the other commands to persist after rebooting or unplugging and replugging."
   echo "  $0 detect                        list all connected USB devices and their current wakeup status"
   echo "  $0 disable vendorId productId    disable wakeup for a specific USB device"
@@ -123,18 +124,29 @@ function is_enabled_in_config {
 #--------------------------------------------------------------------------------------------------
 
 function install {
-  here=$(dirname "$0")
-  cd "$here" || exit
+  bin_dir="/usr/local/bin"
+  if [[ "$1" == "--to" ]] && [[ -n "$2" ]] && [[ $# -eq 2 ]]; then
+    bin_dir=$2
+  elif [[ $# -ne 0 ]]; then
+    echo "Usage: $0 install [--to directory]"
+    exit 1
+  fi
+  # systemd needs an absolute path to the script
+  mkdir -p "$bin_dir"
+  bin_dir=$(cd "$bin_dir" && pwd)
 
-  echo "Installing usb-wakeup-control to /usr/local/bin"
-  cp "$0" /usr/local/bin/usb-wakeup-control
-  chmod +x /usr/local/bin/usb-wakeup-control
+  script=$(readlink -f "$0")
+  cd "$(dirname "$script")" || exit
+
+  echo "Installing usb-wakeup-control to $bin_dir"
+  cp "$script" "$bin_dir/usb-wakeup-control"
+  chmod +x "$bin_dir/usb-wakeup-control"
 
   service_file="usb-wakeup-control.service"
-  target_dir="/etc/systemd/system"
+  target_dir="$systemd_dir"
   echo "Installing $service_file to $target_dir"
-  cp $service_file $target_dir
-  chmod 755 $target_dir/$service_file
+  sed "s|/usr/local/bin/usb-wakeup-control|$bin_dir/usb-wakeup-control|" $service_file >"$target_dir/$service_file"
+  chmod 755 "$target_dir/$service_file"
   systemctl daemon-reload
   systemctl enable $service_file
 
@@ -230,7 +242,7 @@ function wakeup_enable_all_configured_devices {
 #--------------------------------------------------------------------------------------------------
 
 if [[ "$1" == "install" ]]; then
-  install
+  install "${@:2}"
   exit 0
 elif [[ "$1" == "detect" ]]; then
   detect

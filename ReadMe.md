@@ -6,7 +6,7 @@ This simple utility enables or prevents specific USB devices from waking up the 
 
 | Command                                              | Description                                                                                                                                                                                                                        |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `./usb-wakeup-control.sh install`                    | install this script as `/usr/local/bin/usb-wakeup-control` and add a systemd service to `/etc/systemd/system`.<br /><br />_NOTE: This is required for the other commands to persist after rebooting or unplugging and replugging._ |
+| `./usb-wakeup-control.sh install [--to directory]`   | install this script as `<directory>/usb-wakeup-control` (default: `/usr/local/bin`) and add a systemd service to `/etc/systemd/system`.<br /><br />_NOTE: This is required for the other commands to persist after rebooting or unplugging and replugging._ |
 | `./usb-wakeup-control.sh detect`                     | list all connected USB devices and their current wakeup status                                                                                                                                                                     |
 | `./usb-wakeup-control.sh disable vendorId productId` | disable wakeup for a specific USB device                                                                                                                                                                                           |
 | `./usb-wakeup-control.sh enable vendorId productId`  | enable wakeup for a specific USB device                                                                                                                                                                                            |
@@ -26,6 +26,7 @@ You could create these files manually, but it's recommended to use the `disable`
 
 ### Examples
 
+- `sudo ./usb-wakeup-control.sh install --to /usr/bin`
 - `usb-wakeup-control detect`
 - `usb-wakeup-control disable 046d c52b`
 - `usb-wakeup-control enable 046d c52b`
