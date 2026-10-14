@@ -36,3 +36,9 @@ You could create these files manually, but it's recommended to use the `disable`
 ## Thanks
 
 To [this StackExchange answer](https://askubuntu.com/a/1359890) that inspired me to write this simple tool to make the process described in the answer easier for daily use and multiple devices.
+
+And to the contributors who reported and fixed bugs:
+
+- [@devZer0](https://github.com/devZer0) for reporting and proposing a fix for the service exiting early when a configured USB device is disconnected ([#1](https://github.com/bvobart/usb-wakeup-control/issues/1))
+- [@fluoriteByte](https://github.com/fluoriteByte) for following up on [#1](https://github.com/bvobart/usb-wakeup-control/issues/1) and carrying the fix forward in [their fork](https://github.com/fluoriteByte/usb-wakeup-control)
+- [@patux](https://github.com/patux) for fixing the handling of USB devices that show up multiple times, e.g. behind a USB hub ([#2](https://github.com/bvobart/usb-wakeup-control/pull/2))
