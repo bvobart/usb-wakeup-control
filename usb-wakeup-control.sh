@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
-config_dir="/etc/usb-wakeup-control"
+# These locations can be overridden with environment variables, which is mainly useful for testing.
+usb_devices_dir="${USB_WAKEUP_CONTROL_USB_DEVICES_DIR:-/sys/bus/usb/devices}"
+config_dir="${USB_WAKEUP_CONTROL_CONFIG_DIR:-/etc/usb-wakeup-control}"
 
 function usage {
   echo "usb-wakeup-control"
@@ -46,7 +48,7 @@ function usage {
 function find_wakeup_files {
   vendor=$1
   product=$2
-  for bus in /sys/bus/usb/devices/*; do
+  for bus in "$usb_devices_dir"/*; do
     if [[ ! -f "$bus/idVendor" ]] || [[ ! -f "$bus/idProduct" ]]; then continue; fi
 
     idVendor=$(cat "$bus/idVendor")
@@ -144,7 +146,7 @@ function install {
 }
 
 function detect {
-  for bus in /sys/bus/usb/devices/*; do
+  for bus in "$usb_devices_dir"/*; do
     if [[ -f "$bus/idVendor" ]] && [[ -f "$bus/idProduct" ]]; then
       idVendor=$(cat "$bus/idVendor")
       idProduct=$(cat "$bus/idProduct")

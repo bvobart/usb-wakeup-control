@@ -33,6 +33,15 @@ You could create these files manually, but it's recommended to use the `disable`
 > **Note:** `disable` and `enable` require `sudo` (root privileges) to write to `/sys/bus/usb/devices/*/power/wakeup`<br />
   `install` also requires root privileges to write to `/usr/local/bin` and `/etc/systemd/system`<br />
 
+## Development
+
+The tests use [bats](https://github.com/bats-core/bats-core) (e.g. `sudo apt install bats`, `sudo dnf install bats` or `brew install bats-core`) and run against a fake `/sys/bus/usb/devices` and config directory, so they need neither root privileges nor any USB devices:
+
+```sh
+bats test/
+shellcheck usb-wakeup-control.sh
+```
+
 ## Thanks
 
 To [this StackExchange answer](https://askubuntu.com/a/1359890) that inspired me to write this simple tool to make the process described in the answer easier for daily use and multiple devices.
