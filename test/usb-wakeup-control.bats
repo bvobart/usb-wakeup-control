@@ -58,6 +58,7 @@ setup_install() {
   [ -x "$bin_dir/usb-wakeup-control" ]
   cmp "$script" "$bin_dir/usb-wakeup-control"
   grep -qx "ExecStart=$bin_dir/usb-wakeup-control systemd-run-before-sleep" "$USB_WAKEUP_CONTROL_SYSTEMD_DIR/usb-wakeup-control.service"
+  [ "$(stat -c %a "$USB_WAKEUP_CONTROL_SYSTEMD_DIR/usb-wakeup-control.service")" = 644 ]
   [ "$(cat "$BATS_TEST_TMPDIR/systemctl.log")" = "$(printf 'daemon-reload\nenable usb-wakeup-control.service')" ]
   [ -f "$USB_WAKEUP_CONTROL_CONFIG_DIR/disabled" ]
   [ -f "$USB_WAKEUP_CONTROL_CONFIG_DIR/enabled" ]

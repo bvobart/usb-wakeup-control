@@ -152,7 +152,7 @@ function install {
   target_dir="$systemd_dir"
   echo "Installing $service_file to $target_dir"
   sed "s|/usr/local/bin/usb-wakeup-control|$bin_dir/usb-wakeup-control|" $service_file >"$target_dir/$service_file"
-  chmod 755 "$target_dir/$service_file"
+  chmod 644 "$target_dir/$service_file"
   systemctl daemon-reload
   systemctl enable $service_file
 
