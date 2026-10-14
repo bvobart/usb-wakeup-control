@@ -220,3 +220,27 @@ setup_install() {
   [ "$(wakeup_state_of 2-1)" = disabled ]
   [ "$(wakeup_state_of 2-2)" = enabled ]
 }
+
+@test "systemd-run-before-sleep reads the last config line without a trailing newline" {
+  add_device 2-1 046d c077 enabled
+  add_device 2-2 03f0 0024 disabled
+  printf 'dead beef\n046d c077' >"$USB_WAKEUP_CONTROL_CONFIG_DIR/disabled"
+  printf '03f0 0024' >"$USB_WAKEUP_CONTROL_CONFIG_DIR/enabled"
+
+  run "$script" systemd-run-before-sleep
+  [ "$status" -eq 0 ]
+  [ "$(wakeup_state_of 2-1)" = disabled ]
+  [ "$(wakeup_state_of 2-2)" = enabled ]
+}
+
+@test "disable and enable add the device on a new line if the config lacks a trailing newline" {
+  printf '046d c077' >"$USB_WAKEUP_CONTROL_CONFIG_DIR/disabled"
+  printf '03f0 0024' >"$USB_WAKEUP_CONTROL_CONFIG_DIR/enabled"
+
+  run "$script" disable dead beef
+  [ "$status" -eq 0 ]
+  run "$script" enable cafe babe
+  [ "$status" -eq 0 ]
+  [ "$(config disabled)" = "$(printf '046d c077\ndead beef')" ]
+  [ "$(config enabled)" = "$(printf '03f0 0024\ncafe babe')" ]
+}

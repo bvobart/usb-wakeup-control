@@ -92,6 +92,13 @@ function set_wakeup_state {
   done
 }
 
+# Append a line to a config file, making sure it ends up on a line of its own
+# Usage: add_to_config file line
+function add_to_config {
+  if [[ -s "$1" ]] && [[ -n "$(tail -c 1 "$1")" ]]; then echo >>"$1"; fi
+  echo "$2" >>"$1"
+}
+
 # Check if a USB device is disabled in the config
 # Usage: is_disabled_in_config vendor product
 # Returns: 0 if the device is disabled, 1 otherwise
@@ -193,7 +200,7 @@ function disable {
   if ! is_disabled_in_config "$vendor" "$product"; then
     mkdir -p "$config_dir"
     touch "$config_dir/disabled"
-    echo "$vendor $product" >> "$config_dir/disabled"
+    add_to_config "$config_dir/disabled" "$vendor $product"
     echo "Config: added USB device $vendor $product to $config_dir/disabled"
   fi
 
@@ -218,7 +225,7 @@ function enable {
   if ! is_enabled_in_config "$vendor" "$product"; then
     mkdir -p "$config_dir"
     touch "$config_dir/enabled"
-    echo "$vendor $product" >> "$config_dir/enabled"
+    add_to_config "$config_dir/enabled" "$vendor $product"
     echo "Config: added USB device $vendor $product to $config_dir/enabled"
   fi
 
@@ -226,14 +233,14 @@ function enable {
 }
 
 function wakeup_disable_all_configured_devices {
-  while read -r vendor product; do
+  while read -r vendor product || [[ -n "$vendor" ]]; do
     if [[ -z "$vendor" ]] || [[ -z "$product" ]]; then continue; fi
     disable "$vendor" "$product"
   done < "$config_dir/disabled"
 }
 
 function wakeup_enable_all_configured_devices {
-  while read -r vendor product; do
+  while read -r vendor product || [[ -n "$vendor" ]]; do
     if [[ -z "$vendor" ]] || [[ -z "$product" ]]; then continue; fi
     enable "$vendor" "$product"
   done < "$config_dir/enabled"
